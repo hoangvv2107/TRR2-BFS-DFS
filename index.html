@@ -41,18 +41,45 @@
           </div>
 
           <div class="btn-group">
-            <button id="analyzeBtn" class="btn btn-primary">
-              Chay DFS/BFS
+            <button id="runDFSBtn" class="btn btn-primary">Chạy DFS</button>
+            <button id="runBFSBtn" class="btn btn-primary">Chạy BFS</button>
+            <button id="generateMapBtn" class="btn">Tạo ngẫu nhiên</button>
+            <button id="resetBtn" class="btn btn-danger">Làm mới</button>
+          </div>
+
+          <div class="btn-group">
+            <button id="playPauseBtn" class="btn" style="display: none">
+              Dừng
             </button>
-            <button id="resetBtn" class="btn btn-danger">Lam moi</button>
           </div>
 
           <div class="input-row">
-            <label for="sampleSelect">Mau san:</label>
-            <select id="sampleSelect">
-              <option value="">-- Chon de tai nhanh --</option>
-              <option value="safe">Mang an toan (it diem yeu)</option>
-              <option value="fragile">Mang mong manh (nhieu diem yeu)</option>
+            <label>Tốc độ:</label>
+            <div class="speed-controls">
+              <button id="speedSlowBtn" class="btn btn-sm">Chậm</button>
+              <button id="speedNormalBtn" class="btn btn-sm active">
+                Bình thường
+              </button>
+              <button id="speedFastBtn" class="btn btn-sm">Nhanh</button>
+            </div>
+          </div>
+
+          <div class="input-row">
+            <label for="mapSelect">Bản đồ mẫu:</label>
+            <select id="mapSelect">
+              <option value="">-- Chọn bản đồ --</option>
+              <option value="map1">Bản đồ 1</option>
+              <option value="map2">Bản đồ 2</option>
+              <option value="map3">Bản đồ 3</option>
+              <option value="map4">Bản đồ 4</option>
+              <option value="map5">Bản đồ 5</option>
+              <option value="map6">Bản đồ 6</option>
+              <option value="map7">Bản đồ 7</option>
+              <option value="map8">Bản đồ 8</option>
+              <option value="map9">Bản đồ 9</option>
+              <option value="map10">Bản đồ 10</option>
+              <option value="safe">Ví dụ an toàn</option>
+              <option value="fragile">Ví dụ mỏng manh</option>
             </select>
           </div>
 
@@ -76,35 +103,46 @@
         </section>
 
         <section class="panel result-panel">
-          <h2>Phan tich he thong</h2>
-          <div id="statusBadge" class="status-badge neutral">
-            Chua phan tich
-          </div>
-          <div class="result-block">
-            <h3>Thong ke</h3>
-            <p id="statText">So dao: 0 | So cau: 0</p>
-            <p id="connectivityText">Trang thai lien thong: Chua xac dinh</p>
-          </div>
+          <div class="trace-section">
+            <h3>Bảng theo dõi (Trace Table)</h3>
 
-          <div class="result-block">
-            <h3>Dinh cat</h3>
-            <p id="articulationText">Chua co du lieu</p>
-          </div>
+            <div class="trace-analysis-bar">
+              <div class="trace-stats">
+                <div id="statusBadge" class="status-badge neutral">
+                  Chưa phân tích
+                </div>
+                <p id="statText">Số đảo: 0 | Số cầu: 0</p>
+                <p id="connectivityText">
+                  Trạng thái liên thông: Chưa xác định
+                </p>
+              </div>
 
-          <div class="result-block">
-            <h3>Canh cau</h3>
-            <p id="bridgesText">Chua co du lieu</p>
-          </div>
+              <div class="trace-orange">
+                <div class="orange-item">
+                  <h4>Đỉnh cắt</h4>
+                  <p id="articulationText">Chưa có dữ liệu</p>
+                </div>
+                <div class="orange-item">
+                  <h4>Cạnh cầu</h4>
+                  <p id="bridgesText">Chưa có dữ liệu</p>
+                </div>
+              </div>
+            </div>
 
-          <div class="result-block explain">
-            <h3>Y nghia</h3>
-            <p>
-              Neu loai bo mot dinh ma do thi tach thanh nhieu thanh phan, dinh
-              do la dinh cat.
-            </p>
-            <p>
-              Neu loai bo mot canh ma do thi bi tach roi, canh do la canh cau.
-            </p>
+            <div class="trace-table-container">
+              <table class="trace-table">
+                <thead>
+                  <tr>
+                    <th>Bước</th>
+                    <th>Hành động</th>
+                    <th>Đỉnh hiện tại</th>
+                    <th>Stack/Queue</th>
+                    <th>Đã thăm</th>
+                  </tr>
+                </thead>
+                <tbody id="traceBody"></tbody>
+              </table>
+            </div>
           </div>
         </section>
       </main>
