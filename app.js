@@ -292,21 +292,38 @@ function setMode(mode) {
 }
 
 function svgPointFromEvent(event) {
-  const rect = svg.getBoundingClientRect();
-  const vb = svg.viewBox.baseVal;
-  const x = ((event.clientX - rect.left) / rect.width) * vb.width;
-  const y = ((event.clientY - rect.top) / rect.height) * vb.height;
-  return { x, y };
+  // Use SVG's createSVGPoint and getScreenCTM for accurate coordinate transformation
+  const pt = svg.createSVGPoint();
+  pt.x = event.clientX;
+  pt.y = event.clientY;
+
+  const screenCTM = svg.getScreenCTM();
+  if (!screenCTM) {
+    console.error("Could not get screen CTM");
+    return { x: 0, y: 0 };
+  }
+
+  const svgPt = pt.matrixTransform(screenCTM.inverse());
+  console.log("svgPointFromEvent:", {
+    clientX: event.clientX,
+    clientY: event.clientY,
+    svgX: svgPt.x.toFixed(2),
+    svgY: svgPt.y.toFixed(2),
+  });
+  return { x: svgPt.x, y: svgPt.y };
 }
 
 function findNodeByPoint(point) {
   for (const node of state.nodes) {
     const dx = node.x - point.x;
     const dy = node.y - point.y;
-    if (Math.hypot(dx, dy) <= NODE_RADIUS + 4) {
+    const distance = Math.hypot(dx, dy);
+    if (distance <= NODE_RADIUS + 4) {
+      console.log(`Found node ${node.id} at distance ${distance.toFixed(2)}`);
       return node;
     }
   }
+  console.log(`No node found within threshold ${NODE_RADIUS + 4}`);
   return null;
 }
 
@@ -453,28 +470,28 @@ function updateStatus() {
   const islandCount = state.nodes.length;
   const edgeCount = state.edges.length;
 
-  statText.textContent = `So dao: ${islandCount} | So cau: ${edgeCount}`;
+  statText.textContent = `Số đảo: ${islandCount} | Số cầu: ${edgeCount}`;
 
   if (state.analysis.isConnected === null) {
-    connectivityText.textContent = "Trang thai lien thong: Chua xac dinh";
-    articulationText.textContent = "Chua co du lieu";
-    bridgesText.textContent = "Chua co du lieu";
+    connectivityText.textContent = "Trạng thái liên thông: Chưa xác định";
+    articulationText.textContent = "Chưa có dữ liệu";
+    bridgesText.textContent = "Chưa có dữ liệu";
     statusBadge.className = "status-badge neutral";
-    statusBadge.textContent = "Chua phan tich";
+    statusBadge.textContent = "Chưa phân tích";
     return;
   }
 
   const connectedText = state.analysis.isConnected
-    ? "Co (mot thanh phan lien thong)"
-    : "Khong (nhieu thanh phan roi rac)";
-  connectivityText.textContent = `Trang thai lien thong: ${connectedText}`;
+    ? "Có (một thành phần liên thông)"
+    : "Không (nhiều thành phần rời rạc)";
+  connectivityText.textContent = `Trạng thái liên thông: ${connectedText}`;
 
   const articulationList = [...state.analysis.articulation].sort(
     (a, b) => a - b,
   );
   articulationText.textContent = articulationList.length
-    ? articulationList.map((id) => `Dao ${id}`).join(", ")
-    : "Khong co dinh cat";
+    ? articulationList.map((id) => `Đảo ${id}`).join(", ")
+    : "Không có đỉnh cắt";
 
   const bridgeList = [...state.analysis.bridges]
     .map((k) => {
@@ -484,7 +501,7 @@ function updateStatus() {
     .sort();
   bridgesText.textContent = bridgeList.length
     ? bridgeList.join(", ")
-    : "Khong co canh cau";
+    : "Không có cạnh cầu";
 
   const fragile =
     articulationList.length > 0 ||
@@ -492,10 +509,10 @@ function updateStatus() {
     !state.analysis.isConnected;
   if (fragile) {
     statusBadge.className = "status-badge warning";
-    statusBadge.textContent = "Mang can gia co";
+    statusBadge.textContent = "Mạng cần gia cố";
   } else {
     statusBadge.className = "status-badge good";
-    statusBadge.textContent = "Mang ben vung";
+    statusBadge.textContent = "Mạng bền vững";
   }
 }
 
@@ -703,12 +720,6 @@ function render() {
 svg.addEventListener("click", (event) => {
   const point = svgPointFromEvent(event);
   const node = findNodeByPoint(point);
-  console.log("Click event:", {
-    mode: state.mode,
-    point,
-    node,
-    nodeCount: state.nodes.length,
-  });
 
   if (state.mode === "addIsland") {
     if (!node) {
@@ -735,20 +746,17 @@ svg.addEventListener("click", (event) => {
 
     addEdge(state.selectedNodeId, node.id);
     state.selectedNodeId = null;
-    clearAnalysis();
-    updateStatus();
+    analyzeGraph();
     render();
   }
 });
 
 svg.addEventListener("mousedown", (event) => {
-  console.log("Mousedown:", { mode: state.mode });
   if (state.mode !== "move") {
     return;
   }
   const point = svgPointFromEvent(event);
   const node = findNodeByPoint(point);
-  console.log("Found node on mousedown:", node);
   if (!node) {
     return;
   }
@@ -764,7 +772,6 @@ window.addEventListener("mousemove", (event) => {
   if (state.mode !== "move" || state.draggingNodeId === null) {
     return;
   }
-  console.log("Dragging node:", state.draggingNodeId);
   const point = svgPointFromEvent(event);
   const node = state.nodes.find((n) => n.id === state.draggingNodeId);
   if (!node) {
@@ -853,6 +860,7 @@ function clearTrace() {
   playPauseBtn.textContent = "Dừng";
   traversalPaused = false;
   setTraversalActive(false);
+  statusBadge.classList.add("hidden");
   render();
 }
 
@@ -912,6 +920,7 @@ async function runDFSAnimation() {
   playPauseBtn.style.display = "inline-block";
   document.querySelector(".trace-section").classList.add("is-visible");
   setTraversalActive(true);
+  statusBadge.classList.remove("hidden");
 
   const currentRunId = traversalRunId;
   const adj = buildAdjacency();
@@ -979,6 +988,7 @@ async function runBFSAnimation() {
   playPauseBtn.style.display = "inline-block";
   document.querySelector(".trace-section").classList.add("is-visible");
   setTraversalActive(true);
+  statusBadge.classList.remove("hidden");
 
   const currentRunId = traversalRunId;
   const adj = buildAdjacency();
@@ -1063,4 +1073,5 @@ if (generateMapBtn) {
 // Initialize
 setSpeedMode("normal");
 updateStatus();
+statusBadge.classList.add("hidden");
 render();

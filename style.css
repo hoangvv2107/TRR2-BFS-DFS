@@ -242,6 +242,10 @@ select {
   text-transform: uppercase;
 }
 
+.status-badge.hidden {
+  display: none;
+}
+
 .status-badge.neutral {
   background: #e2e8f0;
   color: #334155;
